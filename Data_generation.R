@@ -14,18 +14,19 @@ univ <- function(no_clusters, clust_size_m, clust_pop_k, md, maxfup, ind_coef,
   # no_clusters = number of clusters; 
   # clust_size_m = cluster sample size;
   # clust_pop_k = cluster population size;
-  # md = missing data mechanism;
-  # maxfup = maximum length of follow-up;
+  # md = missing data mechanism (mcar, mar or mnar);
+  # maxfup = maximum length of follow-up (weeks);
   # ind_coef = coefficient for ind.time by trt interaction;
   # ch_coef = coefficient for cr.time by trt interaction;
   # icc = intraclass correlation coefficient;
   # cac = cluster autocorrelation;
   # iac = individual autocorrelation;
-  # sigma = 
-  # beta1, beta2, beta3 = coefficients for tuning the missing data mechanism;
+  # sigma = variance of continuous outcome;
+  # beta1, beta2, beta3 = coefficients for tuning the chosen missing data mechanism;
+  # beta1 is needed for MCAR; beta1 and beta2 for MAR; beta1, beta2 and beta3 for MNAR;
   # design = design (oc, cs or cc);
-  # tp = number of time points (2, 3, 5 or cts);
-  # nonlin = 1 if the cluster intervention effect rate is constant, 2 for non-constant
+  # tp = number of time points (2, 3, 5 or 20);
+  # nonlin = 1 if the cluster intervention effect rate is constant, 2 for non-constant;
   
 {
 
@@ -104,9 +105,9 @@ univ <- function(no_clusters, clust_size_m, clust_pop_k, md, maxfup, ind_coef,
       if(nonlin==1){
         y <- 0.01*timept + total_coef*trt*timept + clust_re + indiv_re
       } else if(nonlin==2 & ch_coef==-0.003855){
-        y <- 0.01*timept + ind_coef*trt*timept + (timept<8)*0*trt + (timept>=8 & timept <78)*(0.30095*exp(-0.1*(timept-8))-0.30095)*trt + (timept==78)*(-0.30069)*trt + clust_re + indiv_re
+        y <- 0.01*timept + ind_coef*trt*timept + (timept<8)*0*trt + (timept>=8 & timept <maxfup)*(0.30095*exp(-0.1*(timept-8))-0.30095)*trt + (timept==maxfup)*(-0.30069)*trt + clust_re + indiv_re
       } else if(nonlin==2 & ch_coef==-0.001285){
-        y <- 0.01*timept + ind_coef*trt*timept + (timept<8)*0*trt + (timept>=8 & timept <78)*(0.10032*exp(-0.1*(timept-8))-0.10032)*trt + (timept==78)*(-0.10023)*trt + clust_re + indiv_re
+        y <- 0.01*timept + ind_coef*trt*timept + (timept<8)*0*trt + (timept>=8 & timept <maxfup)*(0.10032*exp(-0.1*(timept-8))-0.10032)*trt + (timept==maxfup)*(-0.10023)*trt + clust_re + indiv_re
       }
       
       # Create dataframe
@@ -377,7 +378,7 @@ univ <- function(no_clusters, clust_size_m, clust_pop_k, md, maxfup, ind_coef,
         }
 
         # Now for the case where there are 77 measurements in the dataset already and
-        # their first measurement is at time=78. Calculate their first y value but 
+        # their first measurement is at time=78 (maxfup). Calculate their first y value but 
         # don't do any of the MD stuff as breaks the while loop
         if(ceiling(entrytmp)== maxfup){ 
           tempdf$mis <- FALSE
@@ -389,10 +390,10 @@ univ <- function(no_clusters, clust_size_m, clust_pop_k, md, maxfup, ind_coef,
             tempdf$y <- 0*tempdf$timept + 0.01*(tempdf$ord-1) + ch_coef*tempdf$trt*tempdf$timept + ind_coef*tempdf$trt*(tempdf$ord-1) + tempdf$clust_re + tempdf$indiv_re
           } else if(nonlin==2 & ch_coef==-0.003855){
             tempdf$y <- 0*tempdf$timept + 0.01*(tempdf$ord-1) + ind_coef*tempdf$trt*(tempdf$ord-1) + (tempdf$timept<8)*0*tempdf$trt + 
-              (tempdf$timept>=8 & tempdf$timept <78)*(0.30095*exp(-0.1*(tempdf$timept-8))-0.30095)*tempdf$trt + (tempdf$timept>=78)*(-0.30069)*tempdf$trt + tempdf$clust_re + tempdf$indiv_re
+              (tempdf$timept>=8 & tempdf$timept <maxfup)*(0.30095*exp(-0.1*(tempdf$timept-8))-0.30095)*tempdf$trt + (tempdf$timept>=maxfup)*(-0.30069)*tempdf$trt + tempdf$clust_re + tempdf$indiv_re
           } else if(nonlin==2 & ch_coef==-0.001285){
             tempdf$y <- 0*tempdf$timept + 0.01*(tempdf$ord-1) + ind_coef*tempdf$trt*(tempdf$ord-1) + (tempdf$timept<8)*0*tempdf$trt + 
-              (tempdf$timept>=8 & tempdf$timept <78)*(0.10032*exp(-0.1*(tempdf$timept-8))-0.10032)*tempdf$trt + (tempdf$timept>=78)*(-0.10023)*tempdf$trt + tempdf$clust_re + tempdf$indiv_re
+              (tempdf$timept>=8 & tempdf$timept <maxfup)*(0.10032*exp(-0.1*(tempdf$timept-8))-0.10032)*tempdf$trt + (tempdf$timept>=maxfup)*(-0.10023)*tempdf$trt + tempdf$clust_re + tempdf$indiv_re
           }
           break
         }
@@ -402,10 +403,10 @@ univ <- function(no_clusters, clust_size_m, clust_pop_k, md, maxfup, ind_coef,
           tempdf$y <- 0*tempdf$timept + 0.01*(tempdf$ord-1) + ch_coef*tempdf$trt*tempdf$timept + ind_coef*tempdf$trt*(tempdf$ord-1) + tempdf$clust_re + tempdf$indiv_re
         } else if(nonlin==2 & ch_coef==-0.003855){
           tempdf$y <- 0*tempdf$timept + 0.01*(tempdf$ord-1) + ind_coef*tempdf$trt*(tempdf$ord-1) + (tempdf$timept<8)*0*tempdf$trt + 
-            (tempdf$timept>=8 & tempdf$timept <78)*(0.30095*exp(-0.1*(tempdf$timept-8))-0.30095)*tempdf$trt + (tempdf$timept>=78)*(-0.30069)*tempdf$trt + tempdf$clust_re + tempdf$indiv_re
+            (tempdf$timept>=8 & tempdf$timept <maxfup)*(0.30095*exp(-0.1*(tempdf$timept-8))-0.30095)*tempdf$trt + (tempdf$timept>=maxfup)*(-0.30069)*tempdf$trt + tempdf$clust_re + tempdf$indiv_re
         } else if(nonlin==2 & ch_coef==-0.001285){
           tempdf$y <- 0*tempdf$timept + 0.01*(tempdf$ord-1) + ind_coef*tempdf$trt*(tempdf$ord-1) + (tempdf$timept<8)*0*tempdf$trt + 
-            (tempdf$timept>=8 & tempdf$timept <78)*(0.10032*exp(-0.1*(tempdf$timept-8))-0.10032)*tempdf$trt + (tempdf$timept>=78)*(-0.10023)*tempdf$trt + tempdf$clust_re + tempdf$indiv_re
+            (tempdf$timept>=8 & tempdf$timept <maxfup)*(0.10032*exp(-0.1*(tempdf$timept-8))-0.10032)*tempdf$trt + (tempdf$timept>=maxfup)*(-0.10023)*tempdf$trt + tempdf$clust_re + tempdf$indiv_re
         }
 
         #########################################
@@ -493,9 +494,9 @@ univ <- function(no_clusters, clust_size_m, clust_pop_k, md, maxfup, ind_coef,
           if(nonlin==1){
             j$y <- 0*j$timept + 0.01*(j$ord-1) + ch_coef*j$trt*j$timept + ind_coef*j$trt*(j$ord-1) + clust_re[80] + j$indiv_re 
           } else if(nonlin==2 & ch_coef==-0.003855){
-            j$y <- 0*j$timept + 0.01*(j$ord-1) + ind_coef*j$trt*(j$ord-1) + (j$timept<8)*0*j$trt + (j$timept>=8 & j$timept <78)*(0.30095*exp(-0.1*(j$timept-8))-0.30095)*j$trt + (j$timept>=78)*(-0.30069)*j$trt + clust_re[80] + j$indiv_re
+            j$y <- 0*j$timept + 0.01*(j$ord-1) + ind_coef*j$trt*(j$ord-1) + (j$timept<8)*0*j$trt + (j$timept>=8 & j$timept <maxfup)*(0.30095*exp(-0.1*(j$timept-8))-0.30095)*j$trt + (j$timept>=maxfup)*(-0.30069)*j$trt + clust_re[80] + j$indiv_re
           } else if(nonlin==2 & ch_coef==-0.001285){
-            j$y <- 0*j$timept + 0.01*(j$ord-1) + ind_coef*j$trt*(j$ord-1) + (j$timept<8)*0*j$trt + (j$timept>=8 & j$timept <78)*(0.10032*exp(-0.1*(j$timept-8))-0.10032)*j$trt + (j$timept>=78)*(-0.10023)*j$trt + clust_re[80] + j$indiv_re
+            j$y <- 0*j$timept + 0.01*(j$ord-1) + ind_coef*j$trt*(j$ord-1) + (j$timept<8)*0*j$trt + (j$timept>=8 & j$timept <maxfup)*(0.10032*exp(-0.1*(j$timept-8))-0.10032)*j$trt + (j$timept>=maxfup)*(-0.10023)*j$trt + clust_re[80] + j$indiv_re
           }
           
           tempdf <- rbind(tempdf,j)
