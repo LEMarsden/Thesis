@@ -316,6 +316,8 @@ for (i in 1:Nsim){
   print(i)
 }
 
+singul <- length(msgflag)
+
 ########################
 # 1 timescale model
 ########################
